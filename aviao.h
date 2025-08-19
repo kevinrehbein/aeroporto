@@ -1,6 +1,7 @@
-#ifndef AVIAO.H
-#define AVIAO.H
+#ifndef AVIAO_H
+#define AVIAO_H
 
+#include "aeroporto.h"
 #include <pthread.h>
 
 typedef enum {
@@ -13,18 +14,18 @@ typedef enum {
     POUSANDO,
     AGUARDANDO_DECOLAGEM,
     DECOLANDO,
-    AGUARDANDO_EMBARQUE,
-    EMBARCANDO,
     AGUARDANDO_DESEMBARQUE,
     DESEMBARCANDO,
     FINALIZADO,
 } Status;
 
 typedef struct {
-    char* id_aviao;
+    int id_aviao;
     Tipo tipo_aviao;
     Status status_aviao;
     pthread_t thread_aviao;
+    Aeroporto *aeroporto;
 } Aviao;
 
-#endif AVIAO.H
+void *rotina_aviao(void *arg);
+#endif
