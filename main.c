@@ -10,6 +10,11 @@
 #define NUM_PISTAS 3
 #define NUM_PORTOES 5
 #define NUM_TORRES 1    // Atendem duas operações simultâneamente
+const int TEMPO_POUSO = 10;
+const int TEMPO_DESEMBARQUE = 10;
+const int TEMPO_DECOLAGEM = 10;
+
+void* monitora_deadlock(void* arg);
 
 int main (int argc, char *argv[]){ 
 
@@ -18,8 +23,6 @@ int main (int argc, char *argv[]){
     Aviao avioes[MAX_AVIOES];
 
     inicializar_aeroporto(&aeroporto, NUM_PISTAS, NUM_PORTOES, NUM_TORRES);
-    printf("Aguardando aviões...\n\n");
-    sleep(1);
 
     time_t inicio = time(NULL);
     while (difftime(time(NULL), inicio) < 30.0){   // Roda por 30s. 
@@ -51,4 +54,32 @@ int main (int argc, char *argv[]){
 
     printf("\nTodos os aviões concluíram seus voos.\n");
     destruir_aeroporto(&aeroporto);
+}
+
+void* monitora_deadlock(void* arg) {
+    Aeroporto *aeroporto = (Aeroporto*) arg;
+    int inicio_pistas, inicio_torres, inicio_portoes;
+    int sem_mudanca = 0;
+
+    while (1) {
+        inicio_pistas = aeroporto->pistas_disponiveis;
+        inicio_torres = aeroporto->torres_disponiveis;
+        inicio_portoes = aeroporto->portoes_disponiveis;
+
+        sleep(5);                   // verifica a 5 cada segundos
+
+        if (aeroporto->pistas_disponiveis == inicio_pistas && 
+            aeroporto->torres_disponiveis == inicio_torres &&
+            aeroporto->portoes_disponiveis == inicio_portoes) {
+            sem_mudanca++;
+        } else {
+            sem_mudanca = 0;        // houve mundança
+        }
+
+        if (sem_mudanca >= 6) {     // 30s sem mudança.
+            printf("\nALERTA: DEADLOCK detectado! Recursos parados.\n");
+            printf("Todos os avioes (threads) serão derrubados.");
+        }
+    }
+    return NULL;
 }

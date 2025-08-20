@@ -27,6 +27,8 @@ void inicializar_aeroporto(Aeroporto* aeroporto, int num_pistas, int num_portoes
 
     printf("Aeroporto inicializado com sucesso: %d pistas, %d portões, %d torres.\n", 
         num_pistas, num_portoes, num_torres);
+    printf("Aguardando aviões...\n\n");
+    sleep(1);
 }
 
 void destruir_aeroporto(Aeroporto* aeroporto) {

@@ -3,11 +3,23 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-void simular_operacao(char* operacao, int id_aviao, int tempo_segundos) {
-    printf("Avião %d Iniciando %s...\n", id_aviao, operacao);
+extern int TEMPO_POUSO;
+extern int TEMPO_DESEMBARQUE;
+extern int TEMPO_DECOLAGEM;
+
+void simular_operacao(char* operacao, int id_aviao, char *tipo_str, Aeroporto *aeroporto,int tempo_segundos) {
+    char acao[30];
+    snprintf(acao, sizeof(acao), "iniciando %s...", operacao);
+    log_aviao(id_aviao, tipo_str, acao, aeroporto);
+
     sleep(tempo_segundos);
-    printf("Avião %d Finalizou %s.\n", id_aviao, operacao);
+
+    snprintf(acao, sizeof(acao), "finalizou %s.", operacao);
+    log_aviao(id_aviao, tipo_str, acao, aeroporto);
+
+    sleep(1);
 }
+
 
 void alocar_recursos_domestico(Aviao* aviao) {
     pthread_mutex_lock(&aviao->aeroporto->mutex_prioridade);
@@ -38,7 +50,7 @@ void* rotina_aviao(void* arg) {
 
     //Pouso
 
-    printf("Avião %d (%s) se aproximando do aeroporto e aguardando pouso.\n", aviao->id_aviao, tipo_str);
+    log_aviao(aviao->id_aviao, tipo_str, "se aproximando do aeroporto e aguardando pouso.", aeroporto);
     sleep(1);
     aviao->status_aviao = AGUARDANDO_POUSO;
     if (aviao->tipo_aviao == DOMESTICO) {           // Doméstico: Torre → Pista
@@ -50,14 +62,14 @@ void* rotina_aviao(void* arg) {
         sem_wait(&aeroporto->sem_pistas);
         sem_wait(&aeroporto->sem_torres);
     }
-    printf("Avião %d (%s) utilizando torre e pista.\n", aviao->id_aviao, tipo_str);
+    log_aviao(aviao->id_aviao, tipo_str, "utilizando torre e pista.", aeroporto);
     sleep(1);
     aviao->status_aviao = POUSANDO;
-    simular_operacao("pouso", aviao->id_aviao, 10);
+    simular_operacao("pouso", aviao->id_aviao, tipo_str, aeroporto, TEMPO_POUSO);
     sleep(1);
     sem_post(&aeroporto->sem_pistas);
     sem_post(&aeroporto->sem_torres);
-    printf("Avião %d (%s) liberando pista e torre.\n", aviao->id_aviao, tipo_str);    
+    log_aviao(aviao->id_aviao, tipo_str, "liberando pista e torre.", aeroporto);
     if (aviao->tipo_aviao == INTERNACIONAL) {
        alocar_recursos_internacional(aviao, 0);
        liberar_recursos_para_domesticos(aviao);
@@ -65,7 +77,7 @@ void* rotina_aviao(void* arg) {
 
     // Desembarque
     sleep(1);
-    printf("Avião %d (%s) Aguardando desembarque.\n", aviao->id_aviao, tipo_str);
+    log_aviao(aviao->id_aviao, tipo_str, "aguardando desembarque.", aeroporto);
     sleep(1);
     aviao->status_aviao = AGUARDANDO_DESEMBARQUE;
      if (aviao->tipo_aviao == DOMESTICO) {          // Doméstico: Torre → Portão
@@ -77,16 +89,16 @@ void* rotina_aviao(void* arg) {
         sem_wait(&aeroporto->sem_portoes);
         sem_wait(&aeroporto->sem_torres);
     }
-    printf("Avião %d (%s) ocupando portão e torre.\n", aviao->id_aviao, tipo_str);   
+    log_aviao(aviao->id_aviao, tipo_str, "ocupando portao e torre.", aeroporto);
     sleep(1);
     aviao->status_aviao = DESEMBARCANDO;
-    simular_operacao("desembarque", aviao->id_aviao, 10);
+    simular_operacao("desembarque", aviao->id_aviao, tipo_str, aeroporto, TEMPO_DESEMBARQUE);
     sleep(1);
     sem_post(&aeroporto->sem_torres);
-    printf("Avião %d (%s) liberando torre.\n", aviao->id_aviao, tipo_str);
+    log_aviao(aviao->id_aviao, tipo_str, "liberando torre.", aeroporto);
     sleep(5); // Tempo de espera para liberar o portão.
     sem_post(&aeroporto->sem_portoes);
-    printf("Avião %d (%s) liberando portão\n", aviao->id_aviao, tipo_str);
+    log_aviao(aviao->id_aviao, tipo_str, "liberando portao", aeroporto);
      if (aviao->tipo_aviao == INTERNACIONAL) {
         alocar_recursos_internacional(aviao, 0);
         liberar_recursos_para_domesticos(aviao);
@@ -94,7 +106,7 @@ void* rotina_aviao(void* arg) {
 
     // Decolagem
     sleep(1);
-    printf("Avião %d (%s) aguardando decolagem.\n", aviao->id_aviao, tipo_str);
+    log_aviao(aviao->id_aviao, tipo_str, "aguardando decolagem.", aeroporto);
     sleep(1);
     aviao->status_aviao = AGUARDANDO_DECOLAGEM;
     if (aviao->tipo_aviao == DOMESTICO) {           // Doméstico: Torre → Portão → Pista
@@ -108,22 +120,32 @@ void* rotina_aviao(void* arg) {
         sem_wait(&aeroporto->sem_pistas);
         sem_wait(&aeroporto->sem_torres);
     }
-    printf("Avião %d (%s) ocupando torre, portão e pista.\n", aviao->id_aviao, tipo_str);
+    log_aviao(aviao->id_aviao, tipo_str, "ocupando torre, portao e pista.", aeroporto);
     sleep(1);
     aviao->status_aviao = DECOLANDO;
-    simular_operacao("decolagem", aviao->id_aviao, 10);
+    simular_operacao("decolagem", aviao->id_aviao, tipo_str, aeroporto, TEMPO_DECOLAGEM);
     sleep(1);
     sem_post(&aeroporto->sem_torres);
     sem_post(&aeroporto->sem_pistas);
     sem_post(&aeroporto->sem_portoes);
-    printf("Avião %d (%s) liberando torre, pista e portão.\n", aviao->id_aviao, tipo_str);
+    log_aviao(aviao->id_aviao, tipo_str, "liberando torre, portao e pista.", aeroporto);
     if (aviao->tipo_aviao == INTERNACIONAL) {
         alocar_recursos_internacional(aviao, 0);
         liberar_recursos_para_domesticos(aviao);
     }
 
     aviao->status_aviao = FINALIZADO;
-    printf("Avião %d (%s) finalizou todas as operações e deixou o aeroporto.\n", aviao->id_aviao, tipo_str);
+    sleep(1);
+    log_aviao(aviao->id_aviao, tipo_str, "finalizou todas as operacoes e deixou o aeroporto.", aeroporto);
 
     return NULL;
+}
+
+void log_aviao(int id, const char* tipo, const char* acao, Aeroporto *aeroporto) {
+    sem_getvalue(&aeroporto->sem_pistas, &aeroporto->pistas_disponiveis);
+    sem_getvalue(&aeroporto->sem_torres, &aeroporto->torres_disponiveis);
+    sem_getvalue(&aeroporto->sem_portoes, &aeroporto->portoes_disponiveis);
+
+    printf("Avião %-2d %-15s %-55s RESURSOS DISPONÍVEIS | PISTAS: %d | PORTOES: %d | TORRES: %d\n", 
+        id, tipo, acao, aeroporto->pistas_disponiveis, aeroporto->portoes_disponiveis, aeroporto->torres_disponiveis);
 }

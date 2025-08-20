@@ -3,16 +3,21 @@
 
 #include <pthread.h>
 #include <semaphore.h>
+#include <unistd.h>
 
 typedef struct{
     sem_t sem_pistas;
     sem_t sem_torres;
-    sem_t sem_portoes;
+    sem_t sem_portoes;int pistas_disponiveis;
+    int torres_disponiveis;
+    int portoes_disponiveis;
 
     pthread_mutex_t mutex_prioridade;
     pthread_cond_t cond_domestico;
     int internacionais_esperando;
     int domesticos_esperando;
+
+    pthread_t monitor_deadlock;
 } Aeroporto;
 
 void inicializar_aeroporto(Aeroporto* aeroporto, int num_pistas, int num_portoes, int num_torres);

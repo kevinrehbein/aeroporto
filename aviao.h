@@ -28,4 +28,10 @@ typedef struct {
 } Aviao;
 
 void *rotina_aviao(void *arg);
+void simular_operacao(char* operacao, int id_aviao, char *tipo_str, Aeroporto *aeroporto, int tempo_segundos);
+void alocar_recursos_domestico(Aviao* aviao);
+void alocar_recursos_internacional(Aviao* aviao, int esperar);
+void liberar_recursos_para_domesticos(Aviao* aviao);
+void log_aviao(int id, const char* tipo, const char* acao, Aeroporto *aeroporto);
+
 #endif
